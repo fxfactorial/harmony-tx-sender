@@ -21,7 +21,7 @@ func FetchReceivers(filePath string) ([]string, error) {
 	return lines, nil
 }
 
-// RandomReceiver - fetches a random proxy from the specified file
+// RandomReceiver - fetches a random receiver from the specified file
 func RandomReceiver(receivers []string) string {
 	rand.Seed(time.Now().Unix())
 	receiver := receivers[rand.Intn(len(receivers))]
