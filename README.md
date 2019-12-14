@@ -12,6 +12,8 @@ rm -rf harmony-tx-sender && git pull && go build
 
 ## Usage
 
+### All options:
+
 ```
 NAME:
    Harmony Tx Sender CLI App - This is the entry point for starting a new Harmony tx sender
@@ -39,6 +41,7 @@ VERSION:
    go1.12/darwin-amd64
 ```
 
+### Example:
 Create the file data/receivers.txt and add the receiver addresses you want to send tokens to.
 If you want to use tx data for your transactions, create the file data/tx_data.txt and add your tx data. Do note that tx data is a bit hit and miss.
 
