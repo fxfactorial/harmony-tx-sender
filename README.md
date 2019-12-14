@@ -1,6 +1,15 @@
 # Harmony Tx Sender
 Harmony tx sender is a tool to bulk send transactions on Harmony's blockchain.
 
+## Installation
+
+Until I write a wrapper script that downloads the binary, do this for now:
+
+```
+git clone https://github.com/SebastianJ/harmony-tx-sender.git && cd harmony-tx-sender
+rm -rf harmony-tx-sender && git pull && go build
+```
+
 ## Usage
 
 ```
