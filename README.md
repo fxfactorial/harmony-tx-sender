@@ -43,6 +43,7 @@ VERSION:
 
 ### Example:
 Create the file data/receivers.txt and add the receiver addresses you want to send tokens to.
+
 If you want to use tx data for your transactions, create the file data/tx_data.txt and add your tx data. Do note that tx data is a bit hit and miss.
 
 ```
