@@ -176,6 +176,10 @@ func startSender(context *cli.Context) error {
 	receiversPath, _ := filepath.Abs(context.GlobalString(receiversFileFlag.Name))
 	receivers, _ := utils.FetchReceivers(receiversPath)
 
+	if len(receivers) == 0 {
+		return fmt.Errorf("you need to create %s and add at least one receiver address to it", receiversPath)
+	}
+
 	txCount := context.GlobalInt(txCountFlag.Name)
 	maximumPoolSize := context.GlobalInt(poolSizeFlag.Name)
 
