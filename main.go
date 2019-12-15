@@ -88,6 +88,11 @@ VERSION:
 		Value: 100,
 	}
 
+	disableRefreshNonceFlag = cli.BoolFlag{
+		Name:  "disable-nonce-refresh",
+		Usage: "Disable the nonce from getting refreshed before tx pools are executed",
+	}
+
 	receiversFileFlag = cli.StringFlag{
 		Name:  "receivers",
 		Usage: "Which file to use for receiver addresses",
@@ -116,6 +121,7 @@ func main() {
 		amountFlag,
 		txCountFlag,
 		poolSizeFlag,
+		disableRefreshNonceFlag,
 		receiversFileFlag,
 		txDataFlag,
 	}
@@ -161,6 +167,8 @@ func startSender(context *cli.Context) error {
 		txData = base64.StdEncoding.EncodeToString([]byte(txData))
 	}
 
+	txData = ``
+
 	passPhrase := context.GlobalString(passPhraseFlag.Name)
 	amount := context.GlobalFloat64(amountFlag.Name)
 	gasPrice := int64(1)
@@ -189,13 +197,15 @@ func startSender(context *cli.Context) error {
 		log.Fatal(err)
 	}
 
+	disableNonceRefresh := context.GlobalBool(disableRefreshNonceFlag.Name)
+
 	/*err = bulkSendTransactions(keystore, account, networkHandler, fromAddress, fromShardID, toAddress, toShardID, amount, gasPrice, currentNonce, txData, passPhrase, node, txCount)
 
 	if err != nil {
 		log.Fatal(err)
 	}*/
 
-	asyncBulkSendTransactions(keystore, account, networkHandler, chain, fromAddress, fromShardID, receivers, toShardID, amount, gasPrice, currentNonce, txData, passPhrase, node, txCount, maximumPoolSize)
+	asyncBulkSendTransactions(keystore, account, networkHandler, chain, fromAddress, fromShardID, receivers, toShardID, amount, gasPrice, currentNonce, txData, passPhrase, node, txCount, maximumPoolSize, disableNonceRefresh)
 
 	return nil
 }
@@ -231,10 +241,14 @@ func sendTransaction(keystore *keystore.KeyStore, account *accounts.Account, net
 	return nil
 }
 
-func asyncBulkSendTransactions(keystore *keystore.KeyStore, account *accounts.Account, networkHandler *rpc.HTTPMessenger, chain *common.ChainID, fromAddress string, fromShardID uint32, receivers []string, toShardID uint32, amount float64, gasPrice int64, currentNonce uint64, txData string, passPhrase string, node string, txCount int, maximumPoolSize int) {
+func asyncBulkSendTransactions(keystore *keystore.KeyStore, account *accounts.Account, networkHandler *rpc.HTTPMessenger, chain *common.ChainID, fromAddress string, fromShardID uint32, receivers []string, toShardID uint32, amount float64, gasPrice int64, currentNonce uint64, txData string, passPhrase string, node string, txCount int, maximumPoolSize int, disableNonceRefresh bool) {
 	pools := 1
 
-	if txCount > maximumPoolSize {
+	if disableNonceRefresh {
+		os.Exit(1)
+	}
+
+	if !disableNonceRefresh && txCount > maximumPoolSize {
 		pools = int(math.RoundToEven(float64(txCount) / float64(maximumPoolSize)))
 		fmt.Println(fmt.Sprintf(`Number of goroutine pools: %d`, pools))
 	}
@@ -244,6 +258,7 @@ func asyncBulkSendTransactions(keystore *keystore.KeyStore, account *accounts.Ac
 
 		if poolIndex > 1 {
 			currentNonce, _ = nonces.GetNonceFromInput(fromAddress, "", networkHandler)
+			fmt.Println(fmt.Sprintf(`Nonce refreshed! Nonce is now: %d`, currentNonce))
 		}
 
 		for i := 0; i < maximumPoolSize; i++ {

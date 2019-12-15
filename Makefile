@@ -13,13 +13,15 @@ env := GO111MODULE=on
 DIR := ${CURDIR}
 
 all:
-	$(env) go build -o $(dist) -ldflags="$(ldflags)" main.go
+	source $(shell go env GOPATH)/src/github.com/harmony-one/harmony/scripts/setup_bls_build_flags.sh && $(env) go build -o $(dist) -ldflags="$(ldflags)" main.go
 
 static:
-	$(env) go build -o $(dist) -ldflags="$(ldflags) -w -extldflags \"-static\"" main.go
+	make -C $(shell go env GOPATH)/src/github.com/harmony-one/mcl
+	make -C $(shell go env GOPATH)/src/github.com/harmony-one/bls minimised_static BLS_SWAP_G=1
+	source $(shell go env GOPATH)/src/github.com/harmony-one/harmony/scripts/setup_bls_build_flags.sh && $(env) go build -o $(dist) -ldflags="$(ldflags) -w -extldflags \"-static\"" main.go
 
 debug:
-	$(env) go build $(flags) -o $(dist) -ldflags="$(ldflags)" main.go
+	source $(shell go env GOPATH)/src/github.com/harmony-one/harmony/scripts/setup_bls_build_flags.sh && $(env) go build $(flags) -o $(dist) -ldflags="$(ldflags)" main.go
 
 .PHONY:clean
 
