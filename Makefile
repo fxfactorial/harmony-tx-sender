@@ -26,7 +26,7 @@ debug:
 	source $(shell go env GOPATH)/src/github.com/harmony-one/harmony/scripts/setup_bls_build_flags.sh && $(env) go build $(flags) -o $(dist) -ldflags="$(ldflags)" main.go
 
 upload-linux:static
-	aws --profile upload s3 cp dist/harmony-tx-sender ${upload-path-linux}
+	aws s3 cp dist/harmony-tx-sender ${upload-path-linux}
 
 .PHONY:clean upload-linux
 
