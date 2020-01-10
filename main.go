@@ -159,7 +159,7 @@ func startSender(context *cli.Context) error {
 	fromShardID := uint32(context.GlobalInt(fromShardFlag.Name))
 	toShardID := uint32(context.GlobalInt(toShardFlag.Name))
 
-	balances.CheckBalance(fromAddress, node)
+	balances.OutputBalance(fromAddress, node)
 
 	txDataFilePath := context.GlobalString(txDataFlag.Name)
 	txData, err := utils.ReadFileToString(txDataFilePath)
