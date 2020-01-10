@@ -214,35 +214,38 @@ func startSender(context *cli.Context) error {
 	return nil
 }
 
-func bulkSendTransactions(keystore *keystore.KeyStore, account *accounts.Account, networkHandler *rpc.HTTPMessenger, chain *common.ChainID, fromAddress string, fromShardID uint32, receivers []string, toShardID uint32, amount float64, gasPrice int64, currentNonce uint64, txData string, passPhrase string, node string, txCount int) error {
+func bulkSendTransactions(keystore *keystore.KeyStore, account *accounts.Account, networkHandler *rpc.HTTPMessenger, chain *common.ChainID, fromAddress string, fromShardID uint32, receivers []string, toShardID uint32, amount float64, gasPrice int64, currentNonce uint64, txData string, passPhrase string, node string, txCount int) ([]*string, error) {
 	randomReceiver := utils.RandomReceiver(receivers)
+	var txReceipts []*string
 
 	for i := 0; i < txCount; i++ {
-		err := sendTransaction(keystore, account, networkHandler, chain, fromAddress, fromShardID, randomReceiver, toShardID, amount, gasPrice, currentNonce, txData, passPhrase, node)
+		txReceipt, err := sendTransaction(keystore, account, networkHandler, chain, fromAddress, fromShardID, randomReceiver, toShardID, amount, gasPrice, currentNonce, txData, passPhrase, node)
 
 		if err != nil {
-			return err
+			return nil, err
 		}
+
+		txReceipts = append(txReceipts, txReceipt)
 
 		currentNonce++
 	}
 
-	return nil
+	return txReceipts, nil
 }
 
-func sendTransaction(keystore *keystore.KeyStore, account *accounts.Account, networkHandler *rpc.HTTPMessenger, chain *common.ChainID, fromAddress string, fromShardID uint32, toAddress string, toShardID uint32, amount float64, gasPrice int64, currentNonce uint64, txData string, passPhrase string, node string) error {
+func sendTransaction(keystore *keystore.KeyStore, account *accounts.Account, networkHandler *rpc.HTTPMessenger, chain *common.ChainID, fromAddress string, fromShardID uint32, toAddress string, toShardID uint32, amount float64, gasPrice int64, currentNonce uint64, txData string, passPhrase string, node string) (*string, error) {
 	fmt.Println(fmt.Sprintf(`currentNonce is now: %d`, currentNonce))
 
 	txReceipt, err := transactions.SendTransaction(keystore, account, networkHandler, chain, fromAddress, fromShardID, toAddress, toShardID, amount, gasPrice, currentNonce, txData, passPhrase, node)
 
 	if err != nil {
 		fmt.Println(fmt.Sprintf(`Error occurred: %s`, err))
-		return err
+		return nil, err
 	}
 
 	fmt.Println(fmt.Sprintf(`Receipt hash: %s`, *txReceipt))
 
-	return nil
+	return txReceipt, nil
 }
 
 func asyncBulkSendTransactions(keystore *keystore.KeyStore, account *accounts.Account, networkHandler *rpc.HTTPMessenger, chain *common.ChainID, fromAddress string, fromShardID uint32, receivers []string, toShardID uint32, amount float64, gasPrice int64, currentNonce uint64, txData string, passPhrase string, node string, txCount int, maximumPoolSize int, disableNonceRefresh bool) {

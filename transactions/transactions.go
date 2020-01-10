@@ -25,6 +25,18 @@ var (
 
 type interfaceWrapper []interface{}
 
+// ReceiveTxStatus - receive transaction status
+func ReceiveTxStatus(networkHandler *rpc.HTTPMessenger, receiptHash *string) (*string, error) {
+	reply, err := networkHandler.SendRPC(rpc.Method.GetTransactionReceipt, interfaceWrapper{receiptHash})
+	if err != nil {
+		return nil, err
+	}
+
+	r, _ := reply["result"].(string)
+
+	return &r, nil
+}
+
 // SendTransaction - send transactions
 func SendTransaction(keystore *keystore.KeyStore, account *accounts.Account, networkHandler *rpc.HTTPMessenger, chain *common.ChainID, fromAddress string, fromShardID uint32, toAddress string, toShardID uint32, amount float64, gasPrice int64, nonce uint64, inputData string, keystorePassphrase string, node string) (*string, error) {
 	params, err := generateTransactionParams(keystore, account, networkHandler, fromAddress, fromShardID, toAddress, toShardID, amount, gasPrice, nonce, inputData)
