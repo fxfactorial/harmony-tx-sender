@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/rlp"
@@ -25,20 +26,22 @@ var (
 
 type interfaceWrapper []interface{}
 
-// ReceiveTxStatus - receive transaction status
-func ReceiveTxStatus(networkHandler *rpc.HTTPMessenger, receiptHash *string) (*string, error) {
-	reply, err := networkHandler.SendRPC(rpc.Method.GetTransactionReceipt, interfaceWrapper{receiptHash})
+// CheckTransaction - checks a given transaction for finality etc.
+func CheckTransaction(networkHandler *rpc.HTTPMessenger, receiptHash *string) (map[string]interface{}, error) {
+	response, err := networkHandler.SendRPC(rpc.Method.GetTransactionReceipt, interfaceWrapper{receiptHash})
 	if err != nil {
 		return nil, err
 	}
 
-	r, _ := reply["result"].(string)
+	if response["result"] != nil {
+		return response["result"].(map[string]interface{}), nil
+	}
 
-	return &r, nil
+	return nil, nil
 }
 
 // SendTransaction - send transactions
-func SendTransaction(keystore *keystore.KeyStore, account *accounts.Account, networkHandler *rpc.HTTPMessenger, chain *common.ChainID, fromAddress string, fromShardID uint32, toAddress string, toShardID uint32, amount float64, gasPrice int64, nonce uint64, inputData string, keystorePassphrase string, node string) (*string, error) {
+func SendTransaction(keystore *keystore.KeyStore, account *accounts.Account, networkHandler *rpc.HTTPMessenger, chain *common.ChainID, fromAddress string, fromShardID uint32, toAddress string, toShardID uint32, amount float64, gasPrice int64, nonce uint64, inputData string, keystorePassphrase string, node string, confirmationWaitTime int) (map[string]interface{}, error) {
 	params, err := generateTransactionParams(keystore, account, networkHandler, fromAddress, fromShardID, toAddress, toShardID, amount, gasPrice, nonce, inputData)
 
 	if err != nil {
@@ -59,7 +62,43 @@ func SendTransaction(keystore *keystore.KeyStore, account *accounts.Account, net
 		return nil, err
 	}
 
-	return receiptHash, nil
+	if confirmationWaitTime > 0 {
+		result, _ := waitForTxConfirmation(networkHandler, receiptHash, confirmationWaitTime)
+
+		if result != nil {
+			return result, nil
+		}
+	}
+
+	result := make(map[string]interface{})
+	result["transactionHash"] = receiptHash
+
+	return result, nil
+}
+
+func waitForTxConfirmation(networkHandler *rpc.HTTPMessenger, receiptHash *string, confirmationWaitTime int) (map[string]interface{}, error) {
+	if confirmationWaitTime > 0 {
+		for {
+			if confirmationWaitTime < 0 {
+				return nil, nil
+			}
+
+			response, err := CheckTransaction(networkHandler, receiptHash)
+
+			if err != nil {
+				return nil, err
+			}
+
+			if response != nil {
+				return response, nil
+			}
+
+			time.Sleep(time.Second * 1)
+			confirmationWaitTime = confirmationWaitTime - 1
+		}
+	}
+
+	return nil, nil
 }
 
 func generateTransaction(inputData string, amount float64, gasPrice int64, params map[string]interface{}) *transaction.Transaction {
